@@ -17,7 +17,9 @@ jobs:
         with:
           distribution: 'adopt'
           java-version: 17
-      - run: ls /opt/hostedtoolcache/Java_Adopt_jdk/17.0.5-8/x64
+      - run: ls /opt/hostedtoolcache/Java_Adopt_jdk/17.0.5-8/x64/lib
+      - run: ls /opt/hostedtoolcache/Java_Adopt_jdk/17.0.5-8/x64/bin
+      - run: ls /opt/hostedtoolcache/Java_Adopt_jdk/17.0.5-8/x64/lib/server
       - uses: gradle/gradle-build-action@v2
       - name: Build with Gradle
         run: ./gradlew build
