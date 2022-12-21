@@ -1,13 +1,25 @@
-public final class sample/MainKt {
-	public static final fun jclEntry (Lsample/Options;)V
-	public static final fun main ([Ljava/lang/String;)V
+public final class sample/HelloKt {
+	public static final fun cobolEntry (Lsample/HelloLinking;)V
 }
 
-public final class sample/Options {
+public final class sample/HelloLinking {
 	public fun <init> (Ljava/lang/String;I)V
 	public final fun getI ()I
 	public final fun getS ()Ljava/lang/String;
 	public final fun setI (I)V
 	public final fun setS (Ljava/lang/String;)V
+}
+
+public final class sample/Linking {
+	public fun <init> (Ljava/lang/String;I)V
+	public final fun getI ()I
+	public final fun getS ()Ljava/lang/String;
+	public final fun setI (I)V
+	public final fun setS (Ljava/lang/String;)V
+}
+
+public final class sample/MainKt {
+	public static final fun cobolEntry (Lsample/Linking;)V
+	public static final fun main ([Ljava/lang/String;)V
 }
 
