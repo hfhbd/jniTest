@@ -17,6 +17,7 @@ kotlin {
             cinterops {
                 register("jni") {
                     val javaHome = File(System.getProperty("java.home"))
+                    println(javaHome.resolve("include"))
                     includeDirs(
                         javaHome.resolve("include"),
                         javaHome.resolve("include/$os"),

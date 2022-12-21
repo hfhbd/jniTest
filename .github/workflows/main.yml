@@ -25,4 +25,7 @@ jobs:
       - uses: gradle/gradle-build-action@v2
       - name: Build with Gradle
         run: ./gradlew build
-      - run: ./build/bin/linuxX64/debugShared Hello 42
+      - run: ./build/bin/linuxX64/debugExecutable/jniTest.kexe \
+             /home/runner/work/jniTest/jniTest/build/classes/kotlin/jvm/main \
+             /home/runner/work/jniTest/jniTest/build/classes/kotlin/jvm/main \
+             /Users/philipwedemann/Library/Java/JavaVirtualMachines/azul-17.0.5/Contents/Home/lib/*.jar Hello 42

@@ -2,23 +2,26 @@ import jni.*
 import kotlinx.cinterop.*
 
 fun main(vararg args: String) {
-    require(args.size == 2) { "Needs 2 parameters" }
-    
+    require(args.size == 5) { "Needs classpath, lib path, bootclasspath + 2 parameters " }
+    val f = "-Djava.class.path=${args[0]}"
+    println(f)
+    val d = "-Djava.library.path=${args[1]}"
+    println(d)
     memScoped {
-        val options = allocArray<JavaVMOption>(1)
-        options[0].optionString = "-Djava.class.path=.".cstr.ptr
+        val options = allocArray<JavaVMOption>(2)
+        options[0].optionString = f.cstr.ptr
+        options[1].optionString =
+            "--bootclasspath=${args[2]}".cstr.ptr
 
         val vmArgs = alloc<JavaVMInitArgs>()
         vmArgs.version = JNI_VERSION_10
-        vmArgs.nOptions = 1
+        vmArgs.nOptions = 2
         vmArgs.options = options
-        vmArgs.ignoreUnrecognized = 1.convert()
 
         val env = alloc<JNIEnvVar>().ptr
         val jvm = cValuesOf<JavaVMVar>()
-        val resultCreateJvm = memScoped {
-            JNI_CreateJavaVM(jvm, cValuesOf(env).ptr.reinterpret(), vmArgs.ptr)
-        }
+        
+        val resultCreateJvm = JNI_CreateJavaVM(jvm, cValuesOf(env).ptr.reinterpret(), vmArgs.ptr)
         require(resultCreateJvm == JNI_OK)
         defer {
             env.pointed.pointed!!.ExceptionDescribe!!(env)
@@ -27,26 +30,26 @@ fun main(vararg args: String) {
 
         val jcls = env.findClass("sample/MainKt")
         val jclEntry =
-            env.pointed.pointed!!.GetStaticMethodID!!(env, jcls, "jclEntry".cstr.ptr, "(Lsample/Options;)V".cstr.ptr)!!
-        val optionsClass = env.findClass("sample/Options")
+            env.pointed.pointed!!.GetStaticMethodID!!(env, jcls, "cobolEntry".cstr.ptr, "(Lsample/Linking;)V".cstr.ptr)!!
+        val optionsClass = env.findClass("sample/Linking")
         val optionsObject = env.newObject(
             optionsClass,
             env.getMethod(optionsClass, "<init>", "(Ljava/lang/String;I)V"),
             {
-                l = env.newUtfString(args[0])
+                l = env.newUtfString(args[3])
             },
             {
-                i = args[1].toInt()
+                i = args[4].toInt()
             }
         )
 
         env.callStaticVoidMethod(jcls, jclEntry, {
             l = optionsObject
         })
-        
+
         val changedI = env.callIntMethod(optionsObject, env.getMethod(optionsClass, "getI", "()I"))
         val changedS = env.callObjectMethodA(optionsObject, env.getMethod(optionsClass, "getS", "()Ljava/lang/String"))
-        
+
         println("$changedI, ${env.pointed.pointed!!.GetStringChars!!(env, changedS, null)!!.toKString()}")
     }
 }
@@ -57,7 +60,11 @@ private fun CPointer<JNIEnvVar>.newUtfString(string: String): jstring {
     }
 }
 
-private fun CPointer<JNIEnvVar>.callIntMethod(jobject: jobject, method: jmethodID, vararg values: jvalue.() -> Unit): jint {
+private fun CPointer<JNIEnvVar>.callIntMethod(
+    jobject: jobject,
+    method: jmethodID,
+    vararg values: jvalue.() -> Unit
+): jint {
     val f = memScoped {
         allocArray<jvalue>(values.size) {
             values[it].invoke(this)
@@ -66,7 +73,11 @@ private fun CPointer<JNIEnvVar>.callIntMethod(jobject: jobject, method: jmethodI
     return pointed.pointed!!.CallIntMethodA!!(this@callIntMethod, jobject, method, f)
 }
 
-private fun CPointer<JNIEnvVar>.callObjectMethodA(jobject: jobject, method: jmethodID, vararg values: jvalue.() -> Unit): jobject {
+private fun CPointer<JNIEnvVar>.callObjectMethodA(
+    jobject: jobject,
+    method: jmethodID,
+    vararg values: jvalue.() -> Unit
+): jobject {
     val f = memScoped {
         allocArray<jvalue>(values.size) {
             values[it].invoke(this)

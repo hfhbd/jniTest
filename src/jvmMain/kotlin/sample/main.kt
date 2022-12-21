@@ -1,25 +1,32 @@
 package sample
 
-class Options(
+class Linking(
     var s: String,
     var i: Int
 )
 
-fun jclEntry(options: Options) {
+fun cobolEntry(options: Linking) {
     action(options)
-    println(options)
 }
 
-private fun action(options: Options) {
-    options.s = options.s + options.s
-    options.i = options.i + options.i
-    println(options)
+private fun action(linking: Linking) {
+    linking.s = linking.s + linking.s
+    linking.i = linking.i + linking.i
+    println("${linking.s} ${linking.i}")
 }
 
 fun main(vararg arg: String) {
-    val options = Options(
+    val linking = Linking(
         s = arg[0],
         i = arg[1].toInt(),
     )
-    action(options)
+    action(linking)
+    
+    val helloLinking = HelloLinking(
+        s = linking.s,
+        i = linking.i
+    )
+    action(helloLinking)
+    linking.s = helloLinking.s
+    linking.i = helloLinking.i
 }
