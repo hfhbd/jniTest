@@ -8,14 +8,13 @@ fun main(vararg args: String) {
     val d = "-Djava.library.path=${args[1]}"
     println(d)
     memScoped {
-        val options = allocArray<JavaVMOption>(2)
+        val options = allocArray<JavaVMOption>(1)
         options[0].optionString = f.cstr.ptr
-        options[1].optionString =
-            "--bootclasspath=${args[2]}".cstr.ptr
+        // options[1].optionString = "--bootclasspath=${args[2]}".cstr.ptr
 
         val vmArgs = alloc<JavaVMInitArgs>()
         vmArgs.version = JNI_VERSION_10
-        vmArgs.nOptions = 2
+        vmArgs.nOptions = 1
         vmArgs.options = options
 
         val env = alloc<JNIEnvVar>().ptr
