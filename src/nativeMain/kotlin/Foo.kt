@@ -23,7 +23,6 @@ fun main(vararg args: String) {
         val resultCreateJvm = JNI_CreateJavaVM(jvm, cValuesOf(env).ptr.reinterpret(), vmArgs.ptr)
         require(resultCreateJvm == JNI_OK)
         defer {
-            env.pointed.pointed!!.ExceptionDescribe!!(env)
             jvm.ptr[0]!!.pointed.pointed!!.DestroyJavaVM!!(jvm.ptr[0])
         }
 
@@ -47,7 +46,7 @@ fun main(vararg args: String) {
         })
 
         val changedI = env.callIntMethod(optionsObject, env.getMethod(optionsClass, "getI", "()I"))
-        val changedS = env.callObjectMethodA(optionsObject, env.getMethod(optionsClass, "getS", "()Ljava/lang/String"))
+        val changedS = env.callObjectMethodA(optionsObject, env.getMethod(optionsClass, "getS", "()Ljava/lang/String;"))
 
         println("$changedI, ${env.pointed.pointed!!.GetStringChars!!(env, changedS, null)!!.toKString()}")
     }
