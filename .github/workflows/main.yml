@@ -20,6 +20,8 @@ jobs:
       - run: ls /opt/hostedtoolcache/Java_Adopt_jdk/17.0.5-8/x64/lib
       - run: ls /opt/hostedtoolcache/Java_Adopt_jdk/17.0.5-8/x64/bin
       - run: ls /opt/hostedtoolcache/Java_Adopt_jdk/17.0.5-8/x64/lib/server
+      - run: find /opt/hostedtoolcache/Java_Adopt_jdk/17.0.5-8/x64 -name libjvm.so 
+      - run: find /opt/hostedtoolcache/Java_Adopt_jdk/17.0.5-8/x64 -name libjvm.x
       - uses: gradle/gradle-build-action@v2
       - name: Build with Gradle
         run: ./gradlew build
