@@ -124,11 +124,10 @@ private fun CPointer<JNIEnvVar>.getMethod(jClass: jclass, name: String, paramete
     }
 }
 
-private fun CPointer<JNIEnvVar>.getStaticMethod(jClass: jclass, name: String, parameter: String): jmethodID {
-    return memScoped {
+private fun CPointer<JNIEnvVar>.getStaticMethod(jClass: jclass, name: String, parameter: String): jmethodID =
+    memScoped {
         pointed.pointed!!.GetStaticMethodID!!(this@getStaticMethod, jClass, name.cstr.ptr, parameter.cstr.ptr)!!
     }
-}
 
 private fun CPointer<JNIEnvVar>.newObject(
     jClass: jclass,
@@ -143,10 +142,11 @@ private fun CPointer<JNIEnvVar>.newObject(
     return pointed.pointed!!.NewObjectA!!(this@newObject, jClass, method, args)!!
 }
 
-private fun CPointer<JNIEnvVar>.findClass(className: String): jclass {
-    return memScoped {
-        pointed.pointed!!.FindClass!!(this@findClass, className.cstr.ptr)!!
-    }
+private fun CPointer<JNIEnvVar>.findClass(className: String): jclass = memScoped {
+    val p = requireNotNull(pointed.pointed) { "ENV ERROR in findClass: pointed.pointed was null" }
+    val FindClass = requireNotNull(p.FindClass) { "p.FindClass was null" }
+    val jlass = FindClass(this@findClass, className.cstr.ptr)
+    requireNotNull(jlass) { "jclass for $className was not found" }
 }
 
 /*
