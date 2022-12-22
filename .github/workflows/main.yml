@@ -33,6 +33,5 @@ jobs:
         with:
           name: a
           path: | 
-            '**.log'
-            'core.*'
-          if-no-files-found: ignore
+            *.log
+            core.*
