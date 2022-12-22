@@ -1,43 +1,41 @@
 import jni.*
 import kotlinx.cinterop.*
 
-fun main(vararg args: String) {
-    require(args.size == 5) { "Needs classpath, lib path, bootclasspath + 2 parameters " }
-    val f = "-Djava.class.path=${args[0]}"
+fun main() {
+    //require(args.size == 5) { "Needs classpath, lib path, bootclasspath + 2 parameters " }
+    val f = "-Djava.class.path=/Users/philipwedemann/Downloads/jniTest/build/classes/kotlin/jvm/main"
     println(f)
-    val d = "-Djava.library.path=${args[1]}"
+    val d = "-Djava.library.path=/Users/philipwedemann/Downloads/jniTest/build/classes/kotlin/jvm/main"
     println(d)
-    memScoped {
-        val options = allocArray<JavaVMOption>(1)
-        options[0].optionString = f.cstr.ptr
-        // options[1].optionString = "--bootclasspath=${args[2]}".cstr.ptr
+    val jvm = cValuesOf<JavaVMVar>()
+    try {
+        val (env, vmArgs) = memScoped {
+            val options = allocArray<JavaVMOption>(1)
+            options[0].optionString = f.cstr.ptr
+            // options[1].optionString = "--bootclasspath=${args[2]}".cstr.ptr
 
-        val vmArgs = alloc<JavaVMInitArgs>()
-        vmArgs.version = JNI_VERSION_10
-        vmArgs.nOptions = 1
-        vmArgs.options = options
+            val vmArgs = alloc<JavaVMInitArgs>()
+            vmArgs.version = JNI_VERSION_10
+            vmArgs.nOptions = 1
+            vmArgs.options = options
 
-        val env = alloc<JNIEnvVar>().ptr
-        val jvm = cValuesOf<JavaVMVar>()
-        
-        val resultCreateJvm = JNI_CreateJavaVM(jvm, cValuesOf(env).ptr.reinterpret(), vmArgs.ptr)
-        require(resultCreateJvm == JNI_OK)
-        defer {
-            jvm.ptr[0]!!.pointed.pointed!!.DestroyJavaVM!!(jvm.ptr[0])
+            alloc<JNIEnvVar>().ptr to vmArgs.ptr
         }
+        val resultCreateJvm = JNI_CreateJavaVM(jvm, env.reinterpret(), vmArgs)
+        require(resultCreateJvm == JNI_OK)
 
         val jcls = env.findClass("sample/MainKt")
-        val jclEntry =
-            env.pointed.pointed!!.GetStaticMethodID!!(env, jcls, "cobolEntry".cstr.ptr, "(Lsample/Linking;)V".cstr.ptr)!!
+        val jclEntry = env.getStaticMethod(jcls, "cobolEntry", "(Lsample/Linking;)V")
+
         val optionsClass = env.findClass("sample/Linking")
         val optionsObject = env.newObject(
             optionsClass,
             env.getMethod(optionsClass, "<init>", "(Ljava/lang/String;I)V"),
             {
-                l = env.newUtfString(args[3])
+                l = env.newUtfString("Hello")
             },
             {
-                i = args[4].toInt()
+                i = 42
             }
         )
 
@@ -46,9 +44,14 @@ fun main(vararg args: String) {
         })
 
         val changedI = env.callIntMethod(optionsObject, env.getMethod(optionsClass, "getI", "()I"))
-        val changedS = env.callObjectMethodA(optionsObject, env.getMethod(optionsClass, "getS", "()Ljava/lang/String;"))
+        val changedS =
+            env.callObjectMethodA(optionsObject, env.getMethod(optionsClass, "getS", "()Ljava/lang/String;"))
 
         println("$changedI, ${env.pointed.pointed!!.GetStringChars!!(env, changedS, null)!!.toKString()}")
+    } finally {
+        memScoped {
+            jvm.ptr[0]!!.pointed.pointed!!.DestroyJavaVM!!(jvm.ptr[0])
+        }
     }
 }
 
@@ -106,6 +109,12 @@ private fun CPointer<JNIEnvVar>.getField(jobject: jobject, name: String, type: S
 private fun CPointer<JNIEnvVar>.getMethod(jClass: jclass, name: String, parameter: String): jmethodID {
     return memScoped {
         pointed.pointed!!.GetMethodID!!(this@getMethod, jClass, name.cstr.ptr, parameter.cstr.ptr)!!
+    }
+}
+
+private fun CPointer<JNIEnvVar>.getStaticMethod(jClass: jclass, name: String, parameter: String): jmethodID {
+    return memScoped {
+        pointed.pointed!!.GetStaticMethodID!!(this@getStaticMethod, jClass, name.cstr.ptr, parameter.cstr.ptr)!!
     }
 }
 
