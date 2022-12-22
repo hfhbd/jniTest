@@ -1,11 +1,11 @@
 import jni.*
 import kotlinx.cinterop.*
 
-fun main() {
-    //require(args.size == 5) { "Needs classpath, lib path, bootclasspath + 2 parameters " }
-    val f = "-Djava.class.path=/Users/philipwedemann/Downloads/jniTest/build/classes/kotlin/jvm/main"
+fun main(vararg args: String) {
+    require(args.size == 5) { "Needs classpath, lib path, bootclasspath + 2 parameters " }
+    val f = "-Djava.class.path=${args[0]}"
     println(f)
-    val d = "-Djava.library.path=/Users/philipwedemann/Downloads/jniTest/build/classes/kotlin/jvm/main"
+    val d = "-Djava.library.path=${args[1]}"
     println(d)
     val jvm = cValuesOf<JavaVMVar>()
     try {
@@ -23,8 +23,10 @@ fun main() {
         }
         val resultCreateJvm = JNI_CreateJavaVM(jvm, env.reinterpret(), vmArgs)
         require(resultCreateJvm == JNI_OK)
+        println("JVM CREATED")
 
         val jcls = env.findClass("sample/MainKt")
+        println("GOT MainKt")
         val jclEntry = env.getStaticMethod(jcls, "cobolEntry", "(Lsample/Linking;)V")
 
         val optionsClass = env.findClass("sample/Linking")
@@ -38,10 +40,12 @@ fun main() {
                 i = 42
             }
         )
+        println("CREATE Main.Linking")
 
         env.callStaticVoidMethod(jcls, jclEntry, {
             l = optionsObject
         })
+        println("CALLED cobolentry")
 
         val changedI = env.callIntMethod(optionsObject, env.getMethod(optionsClass, "getI", "()I"))
         val changedS =
@@ -49,9 +53,11 @@ fun main() {
 
         println("$changedI, ${env.pointed.pointed!!.GetStringChars!!(env, changedS, null)!!.toKString()}")
     } finally {
+        println("SHUTDOWN JVM")
         memScoped {
             jvm.ptr[0]!!.pointed.pointed!!.DestroyJavaVM!!(jvm.ptr[0])
         }
+        println("FINISHED")
     }
 }
 
