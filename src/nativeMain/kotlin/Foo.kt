@@ -2,7 +2,7 @@ import jni.*
 import kotlinx.cinterop.*
 
 fun main(vararg args: String) {
-    require(args.size == 2) { "Needs classpath + 2 parameters " }
+    require(args.size == 3) { "Needs classpath + 2 parameters " }
     requireNotNull(args[2].toIntOrNull())
 
     val classPath = "-Djava.class.path=${args[0]}"
