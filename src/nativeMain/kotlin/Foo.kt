@@ -21,6 +21,7 @@ fun main(vararg args: String) {
 
             alloc<JNIEnvVar>().ptr to vmArgs.ptr
         }
+        println("CREATE JVM")
         val resultCreateJvm = JNI_CreateJavaVM(jvm, env.reinterpret(), vmArgs)
         require(resultCreateJvm == JNI_OK)
         println("JVM CREATED")
