@@ -22,11 +22,15 @@ fun main(vararg args: String) {
         
         val resultCreateJvm = JNI_CreateJavaVM(jvm, cValuesOf(env).ptr.reinterpret(), vmArgs.ptr)
         require(resultCreateJvm == JNI_OK)
+        println("JVM CREATED")
         defer {
+            println("SHUTDOWN JVM")
             jvm.ptr[0]!!.pointed.pointed!!.DestroyJavaVM!!(jvm.ptr[0])
+            println("FINISHED")
         }
 
         val jcls = env.findClass("sample/MainKt")
+        println("GOT MainKt")
         val jclEntry =
             env.pointed.pointed!!.GetStaticMethodID!!(env, jcls, "cobolEntry".cstr.ptr, "(Lsample/Linking;)V".cstr.ptr)!!
         val optionsClass = env.findClass("sample/Linking")
@@ -40,10 +44,12 @@ fun main(vararg args: String) {
                 i = args[4].toInt()
             }
         )
+        println("CREATE Main.Linking")
 
         env.callStaticVoidMethod(jcls, jclEntry, {
             l = optionsObject
         })
+        println("CALLED cobolentry")
 
         val changedI = env.callIntMethod(optionsObject, env.getMethod(optionsClass, "getI", "()I"))
         val changedS = env.callObjectMethodA(optionsObject, env.getMethod(optionsClass, "getS", "()Ljava/lang/String;"))
