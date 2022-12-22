@@ -26,3 +26,10 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build
       - run: LD_LIBRARY_PATH=/opt/hostedtoolcache/Java_Adopt_jdk/17.0.5-8/x64/lib/server ./build/bin/linuxX64/debugExecutable/jniTest.kexe /home/runner/work/jniTest/jniTest/build/classes/kotlin/jvm/main Hello 42
+      - uses: actions/upload-artifact@v3
+        with:
+          name: a
+          path: | 
+            '**.log'
+            'core.*'
+          if-no-files-found: ignore
