@@ -28,6 +28,10 @@ fun main(vararg args: String) {
                 "JNI_CreateJavaVM failed"
             }
             println("JVM CREATED")
+            val version = requireNotNull(env.pointed.pointed) {
+                "VERSION env.pointed.pointed was null"
+            }.let { requireNotNull(it.GetVersion) {"VERSION it.GetVersion was null "} }(env)
+            println("GOT VERSION $version")
 
             val jcls = env.findClass("sample/MainKt")
             println("GOT MainKt")
@@ -149,7 +153,3 @@ private fun CPointer<JNIEnvVar>.findClass(className: String): jclass = memScoped
     val jlass = FindClass(this@findClass, className.cstr.ptr)
     requireNotNull(jlass) { "jclass for $className was not found" }
 }
-
-/*
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/Users/philipwedemann/Library/Java/JavaVirtualMachines/azul-17.0.5/Contents/Home/lib/server build/bin/macosArm64/debugExecutable/jniTest.kexe /Users/philipwedemann/Downloads/jniTest/build/classes/kotlin/jvm/main:/Users/philipwedemann/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk8/1.8.0-RC2/c7080e0e0c608235bf07d8542dd2b2589bbb8881/kotlin-stdlib-jdk8-1.8.0-RC2.jar:/Users/philipwedemann/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk7/1.8.0-RC2/bed3d73e81d474ba2119ae203bdd15e96d7cf0bc/kotlin-stdlib-jdk7-1.8.0-RC2.jar:/Users/philipwedemann/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/1.8.0-RC2/89303520e71f5a7eda0b21ce8a3bd9f0154921bb/kotlin-stdlib-1.8.0-RC2.jar:/Users/philipwedemann/.gradle/caches/modules-2/files-2.1/org.jetbrains/annotations/13.0/919f0dfe192fb4e063e7dacadee7f8bb9a2672a9/annotations-13.0.jar Hello 2 
-*/
