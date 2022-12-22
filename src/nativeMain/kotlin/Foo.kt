@@ -2,21 +2,22 @@ import jni.*
 import kotlinx.cinterop.*
 
 fun main(vararg args: String) {
-    require(args.size == 3) { "Needs classpath + 2 parameters " }
+    require(args.size == 2) { "Needs classpath + 2 parameters " }
     requireNotNull(args[2].toIntOrNull())
 
     val classPath = "-Djava.class.path=${args[0]}"
     println(classPath)
+    // val libPath = "-Djava.library.path=${args[1]}"
     val jvm = cValuesOf<JavaVMVar>()
     try {
         memScoped {
-            val options = allocArray<JavaVMOption>(1)
-            options[0].optionString = classPath.cstr.ptr
-            // options[1].optionString = "--bootclasspath=${args[2]}".cstr.ptr
-
             val vmArgs = alloc<JavaVMInitArgs>()
             vmArgs.version = JNI_VERSION_10
             vmArgs.nOptions = 1
+            val options = allocArray<JavaVMOption>(vmArgs.nOptions)
+            options[0].optionString = classPath.cstr.ptr
+            //options[1].optionString = libPath.cstr.ptr
+
             vmArgs.options = options
             val env = alloc<JNIEnvVar>().ptr
 
