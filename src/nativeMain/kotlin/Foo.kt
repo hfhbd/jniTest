@@ -2,61 +2,66 @@ import jni.*
 import kotlinx.cinterop.*
 
 fun main(vararg args: String) {
-    require(args.size == 5) { "Needs classpath, lib path, bootclasspath + 2 parameters " }
-    val f = "-Djava.class.path=${args[0]}"
-    println(f)
-    val d = "-Djava.library.path=${args[1]}"
-    println(d)
+    require(args.size == 3) { "Needs classpath + 2 parameters " }
+    requireNotNull(args[2].toIntOrNull())
+
+    val classPath = "-Djava.class.path=${args[0]}"
+    println(classPath)
     val jvm = cValuesOf<JavaVMVar>()
     try {
-        val (env, vmArgs) = memScoped {
+        memScoped {
             val options = allocArray<JavaVMOption>(1)
-            options[0].optionString = f.cstr.ptr
+            options[0].optionString = classPath.cstr.ptr
             // options[1].optionString = "--bootclasspath=${args[2]}".cstr.ptr
 
             val vmArgs = alloc<JavaVMInitArgs>()
             vmArgs.version = JNI_VERSION_10
             vmArgs.nOptions = 1
             vmArgs.options = options
+            val env = alloc<JNIEnvVar>().ptr
 
-            alloc<JNIEnvVar>().ptr to vmArgs.ptr
-        }
-        println("CREATE JVM")
-        val resultCreateJvm = JNI_CreateJavaVM(jvm, env.reinterpret(), vmArgs)
-        require(resultCreateJvm == JNI_OK)
-        println("JVM CREATED")
-
-        val jcls = env.findClass("sample/MainKt")
-        println("GOT MainKt")
-        val jclEntry = env.getStaticMethod(jcls, "cobolEntry", "(Lsample/Linking;)V")
-
-        val optionsClass = env.findClass("sample/Linking")
-        val optionsObject = env.newObject(
-            optionsClass,
-            env.getMethod(optionsClass, "<init>", "(Ljava/lang/String;I)V"),
-            {
-                l = env.newUtfString("Hello")
-            },
-            {
-                i = 42
+            println("CREATE JVM")
+            val resultCreateJvm = JNI_CreateJavaVM(jvm, env.reinterpret(), vmArgs.ptr)
+            println("CHECK JVM")
+            require(resultCreateJvm == JNI_OK) {
+                "JNI_CreateJavaVM failed"
             }
-        )
-        println("CREATE Main.Linking")
+            println("JVM CREATED")
 
-        env.callStaticVoidMethod(jcls, jclEntry, {
-            l = optionsObject
-        })
-        println("CALLED cobolentry")
+            val jcls = env.findClass("sample/MainKt")
+            println("GOT MainKt")
+            val jclEntry = env.getStaticMethod(jcls, "cobolEntry", "(Lsample/Linking;)V")
 
-        val changedI = env.callIntMethod(optionsObject, env.getMethod(optionsClass, "getI", "()I"))
-        val changedS =
-            env.callObjectMethodA(optionsObject, env.getMethod(optionsClass, "getS", "()Ljava/lang/String;"))
+            val optionsClass = env.findClass("sample/Linking")
+            val optionsObject = env.newObject(
+                optionsClass,
+                env.getMethod(optionsClass, "<init>", "(Ljava/lang/String;I)V"),
+                {
+                    l = env.newUtfString(args[1])
+                },
+                {
+                    i = args[2].toInt()
+                }
+            )
+            println("CREATE Main.Linking")
 
-        println("$changedI, ${env.pointed.pointed!!.GetStringChars!!(env, changedS, null)!!.toKString()}")
+            env.callStaticVoidMethod(jcls, jclEntry, {
+                l = optionsObject
+            })
+            println("CALLED cobolentry")
+
+            val changedI = env.callIntMethod(optionsObject, env.getMethod(optionsClass, "getI", "()I"))
+            val changedS =
+                env.callObjectMethodA(optionsObject, env.getMethod(optionsClass, "getS", "()Ljava/lang/String;"))
+
+            println("$changedI, ${env.pointed.pointed!!.GetStringChars!!(env, changedS, null)!!.toKString()}")
+        }
     } finally {
         println("SHUTDOWN JVM")
-        memScoped {
-            jvm.ptr[0]!!.pointed.pointed!!.DestroyJavaVM!!(jvm.ptr[0])
+        if (jvm.size != 0) {
+            memScoped {
+                jvm.ptr[0]!!.pointed.pointed!!.DestroyJavaVM!!(jvm.ptr[0])
+            }
         }
         println("FINISHED")
     }
@@ -143,3 +148,7 @@ private fun CPointer<JNIEnvVar>.findClass(className: String): jclass {
         pointed.pointed!!.FindClass!!(this@findClass, className.cstr.ptr)!!
     }
 }
+
+/*
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/Users/philipwedemann/Library/Java/JavaVirtualMachines/azul-17.0.5/Contents/Home/lib/server build/bin/macosArm64/debugExecutable/jniTest.kexe /Users/philipwedemann/Downloads/jniTest/build/classes/kotlin/jvm/main:/Users/philipwedemann/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk8/1.8.0-RC2/c7080e0e0c608235bf07d8542dd2b2589bbb8881/kotlin-stdlib-jdk8-1.8.0-RC2.jar:/Users/philipwedemann/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk7/1.8.0-RC2/bed3d73e81d474ba2119ae203bdd15e96d7cf0bc/kotlin-stdlib-jdk7-1.8.0-RC2.jar:/Users/philipwedemann/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/1.8.0-RC2/89303520e71f5a7eda0b21ce8a3bd9f0154921bb/kotlin-stdlib-1.8.0-RC2.jar:/Users/philipwedemann/.gradle/caches/modules-2/files-2.1/org.jetbrains/annotations/13.0/919f0dfe192fb4e063e7dacadee7f8bb9a2672a9/annotations-13.0.jar Hello 2 
+*/
