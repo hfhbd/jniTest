@@ -2,103 +2,112 @@ import jni.*
 import kotlinx.cinterop.*
 
 fun main(vararg args: String) {
-    require(args.size == 5) { "Needs classpath, lib path, bootclasspath + 2 parameters " }
-    val f = "-Djava.class.path=${args[0]}"
-    println(f)
-    val d = "-Djava.library.path=${args[1]}"
-    println(d)
-    memScoped {
-        val options = allocArray<JavaVMOption>(1)
-        options[0].optionString = f.cstr.ptr
-        // options[1].optionString = "--bootclasspath=${args[2]}".cstr.ptr
+    require(args.size == 3) { "Needs classpath + 2 parameters " }
+    requireNotNull(args[2].toIntOrNull())
 
-        val vmArgs = alloc<JavaVMInitArgs>()
-        vmArgs.version = JNI_VERSION_10
-        vmArgs.nOptions = 1
-        vmArgs.options = options
+    val classPath = "-Djava.class.path=${args[0]}"
+    println(classPath)
+    val jvmArena = Arena()
+    val jvm = jvmArena.alloc<CPointerVar<JavaVMVar>>()
+    try {
+        memScoped {
+            val vmArgs = alloc<JavaVMInitArgs>()
+            vmArgs.version = JNI_VERSION_10
+            vmArgs.nOptions = 1
+            val options = allocArray<JavaVMOption>(vmArgs.nOptions)
+            options[0].optionString = classPath.cstr.ptr
 
-        val env = alloc<JNIEnvVar>().ptr
-        val jvm = cValuesOf<JavaVMVar>()
-        
-        val resultCreateJvm = JNI_CreateJavaVM(jvm, cValuesOf(env).ptr.reinterpret(), vmArgs.ptr)
-        require(resultCreateJvm == JNI_OK)
-        println("JVM CREATED")
-        defer {
+            vmArgs.options = options
+            val penv = alloc<CPointerVar<JNIEnvVar>>()
+
+            println("CREATE JVM")
+            val resultCreateJvm = JNI_CreateJavaVM(jvm.ptr, penv.ptr.reinterpret(), vmArgs.ptr)
+            println("CHECK JVM")
+            require(resultCreateJvm == JNI_OK) {
+                "JNI_CreateJavaVM failed"
+            }
+            val env = penv.value!!
+            println("JVM CREATED")
+            val version = requireNotNull(env.pointed.pointed) {
+                "VERSION env.pointed.pointed was null"
+            }.let { requireNotNull(it.GetVersion) { "VERSION it.GetVersion was null " } }(env)
+            println("GOT VERSION $version")
+
+            val jcls = env.findClass("sample/MainKt")
+            println("GOT MainKt")
+            val jclEntry = env.getStaticMethod(jcls, "cobolEntry", "(Lsample/Linking;)V")
+            println("GOT jclEntry")
+            val optionsClass = env.findClass("sample/Linking")
+            println("GOT optionsClass")
+            val init = env.getMethod(optionsClass, "<init>", "(Ljava/lang/String;I)V")
+            println("GOT init")
+            val optionsObject = env.newObject(
+                optionsClass,
+                init,
+                {
+                    l = env.newUtfString(args[1])
+                }, {
+                    i = args[2].toInt()
+                }
+            )
+            println("CREATE Main.Linking")
+
+            env.callStaticVoidMethod(jcls, jclEntry, {
+                l = optionsObject
+            })
+            println("CALLED cobolentry")
+
+            val changedI = env.callIntMethod(optionsObject, env.getMethod(optionsClass, "getI", "()I"))
+            val changedS =
+                env.callObjectMethodA(optionsObject, env.getMethod(optionsClass, "getS", "()Ljava/lang/String;"))
+
+            println("$changedI, ${env.pointed.pointed!!.GetStringChars!!(env, changedS, null)!!.toKString()}")
+        }
+    } finally {
+        println("FINALLY")
+        if (jvm.value != null) {
             println("SHUTDOWN JVM")
             jvm.ptr[0]!!.pointed.pointed!!.DestroyJavaVM!!(jvm.ptr[0])
-            println("FINISHED")
+            println("JVM DESTROYED")
         }
-
-        val jcls = env.findClass("sample/MainKt")
-        println("GOT MainKt")
-        val jclEntry =
-            env.pointed.pointed!!.GetStaticMethodID!!(env, jcls, "cobolEntry".cstr.ptr, "(Lsample/Linking;)V".cstr.ptr)!!
-        val optionsClass = env.findClass("sample/Linking")
-        val optionsObject = env.newObject(
-            optionsClass,
-            env.getMethod(optionsClass, "<init>", "(Ljava/lang/String;I)V"),
-            {
-                l = env.newUtfString(args[3])
-            },
-            {
-                i = args[4].toInt()
-            }
-        )
-        println("CREATE Main.Linking")
-
-        env.callStaticVoidMethod(jcls, jclEntry, {
-            l = optionsObject
-        })
-        println("CALLED cobolentry")
-
-        val changedI = env.callIntMethod(optionsObject, env.getMethod(optionsClass, "getI", "()I"))
-        val changedS = env.callObjectMethodA(optionsObject, env.getMethod(optionsClass, "getS", "()Ljava/lang/String;"))
-
-        println("$changedI, ${env.pointed.pointed!!.GetStringChars!!(env, changedS, null)!!.toKString()}")
+        println("FINISHED")
     }
+    jvmArena.clear()
 }
 
-private fun CPointer<JNIEnvVar>.newUtfString(string: String): jstring {
-    return memScoped {
-        pointed.pointed!!.NewStringUTF!!(this@newUtfString, string.cstr.ptr)!!
-    }
+private fun CPointer<JNIEnvVar>.newUtfString(string: String): jstring = memScoped {
+    pointed.pointed!!.NewStringUTF!!(this@newUtfString, string.cstr.ptr)!!
 }
 
 private fun CPointer<JNIEnvVar>.callIntMethod(
     jobject: jobject,
     method: jmethodID,
     vararg values: jvalue.() -> Unit
-): jint {
-    val f = memScoped {
-        allocArray<jvalue>(values.size) {
-            values[it].invoke(this)
-        }
+): jint = memScoped {
+    val args = allocArray<jvalue>(values.size) {
+        values[it].invoke(this)
     }
-    return pointed.pointed!!.CallIntMethodA!!(this@callIntMethod, jobject, method, f)
+    pointed.pointed!!.CallIntMethodA!!(this@callIntMethod, jobject, method, args)
 }
 
 private fun CPointer<JNIEnvVar>.callObjectMethodA(
     jobject: jobject,
     method: jmethodID,
     vararg values: jvalue.() -> Unit
-): jobject {
-    val f = memScoped {
-        allocArray<jvalue>(values.size) {
-            values[it].invoke(this)
-        }
+): jobject = memScoped {
+    val args = allocArray<jvalue>(values.size) {
+        values[it].invoke(this)
     }
-    return pointed.pointed!!.CallObjectMethodA!!(this@callObjectMethodA, jobject, method, f)!!
+    pointed.pointed!!.CallObjectMethodA!!(this@callObjectMethodA, jobject, method, args)!!
 }
 
 private fun CPointer<JNIEnvVar>.callStaticVoidMethod(
     jClass: jclass,
     method: jmethodID,
     vararg values: jvalue.() -> Unit
-) {
-    val args = memScoped {
-        allocArray<jvalue>(values.size) {
-            values[it].invoke(this)
-        }
+): Unit = memScoped {
+    val args = allocArray<jvalue>(values.size) {
+        values[it].invoke(this)
     }
     pointed.pointed!!.CallStaticVoidMethodA!!(this@callStaticVoidMethod, jClass, method, args)
 }
@@ -115,21 +124,25 @@ private fun CPointer<JNIEnvVar>.getMethod(jClass: jclass, name: String, paramete
     }
 }
 
+private fun CPointer<JNIEnvVar>.getStaticMethod(jClass: jclass, name: String, parameter: String): jmethodID =
+    memScoped {
+        pointed.pointed!!.GetStaticMethodID!!(this@getStaticMethod, jClass, name.cstr.ptr, parameter.cstr.ptr)!!
+    }
+
 private fun CPointer<JNIEnvVar>.newObject(
     jClass: jclass,
     method: jmethodID,
     vararg values: jvalue.() -> Unit
-): jobject {
-    val args = memScoped {
-        allocArray<jvalue>(values.size) {
-            values[it].invoke(this)
-        }
+): jobject = memScoped {
+    val args = allocArray<jvalue>(values.size) {
+        values[it].invoke(this)
     }
-    return pointed.pointed!!.NewObjectA!!(this@newObject, jClass, method, args)!!
+    pointed.pointed!!.NewObjectA!!(this@newObject, jClass, method, args)!!
 }
 
-private fun CPointer<JNIEnvVar>.findClass(className: String): jclass {
-    return memScoped {
-        pointed.pointed!!.FindClass!!(this@findClass, className.cstr.ptr)!!
-    }
+private fun CPointer<JNIEnvVar>.findClass(className: String): jclass = memScoped {
+    val p = requireNotNull(pointed.pointed) { "ENV ERROR in findClass: pointed.pointed was null" }
+    val FindClass = requireNotNull(p.FindClass) { "p.FindClass was null" }
+    val jlass = FindClass(this@findClass, className.cstr.ptr)
+    requireNotNull(jlass) { "jclass for $className was not found" }
 }

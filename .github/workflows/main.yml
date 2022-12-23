@@ -25,4 +25,12 @@ jobs:
       - uses: gradle/gradle-build-action@v2
       - name: Build with Gradle
         run: ./gradlew build
-      - run: LD_LIBRARY_PATH=/opt/hostedtoolcache/Java_Adopt_jdk/17.0.5-8/x64/lib/server ./build/bin/linuxX64/debugExecutable/jniTest.kexe /home/runner/work/jniTest/jniTest/build/classes/kotlin/jvm/main /home/runner/work/jniTest/jniTest/build/classes/kotlin/jvm/main /Users/philipwedemann/Library/Java/JavaVirtualMachines/azul-17.0.5/Contents/Home/lib/*.jar Hello 42
+      - run: ./gradlew getClassPath
+      - run: echo "CLASSPATH=$(cat class.path)" >> $GITHUB_ENV
+      - run: LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${{ env.JAVA_HOME }}/lib/server ./build/bin/linuxX64/debugExecutable/jniTest.kexe ${{ env.CLASSPATH }} Hello 42
+      - uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          path: | 
+            "**.log"
+            "core.**"
