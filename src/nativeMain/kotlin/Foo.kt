@@ -7,7 +7,8 @@ fun main(vararg args: String) {
 
     val classPath = "-Djava.class.path=${args[0]}"
     println(classPath)
-    val jvm = cValuesOf<JavaVMVar>()
+    val jvmArena = Arena()
+    val jvm = jvmArena.alloc<CPointerVar<JavaVMVar>>()
     try {
         memScoped {
             val vmArgs = alloc<JavaVMInitArgs>()
@@ -20,7 +21,7 @@ fun main(vararg args: String) {
             val penv = alloc<CPointerVar<JNIEnvVar>>()
 
             println("CREATE JVM")
-            val resultCreateJvm = JNI_CreateJavaVM(jvm, penv.ptr.reinterpret(), vmArgs.ptr)
+            val resultCreateJvm = JNI_CreateJavaVM(jvm.ptr, penv.ptr.reinterpret(), vmArgs.ptr)
             println("CHECK JVM")
             require(resultCreateJvm == JNI_OK) {
                 "JNI_CreateJavaVM failed"
@@ -63,15 +64,15 @@ fun main(vararg args: String) {
             println("$changedI, ${env.pointed.pointed!!.GetStringChars!!(env, changedS, null)!!.toKString()}")
         }
     } finally {
-        println("SHUTDOWN JVM")
-        if (jvm.size != 0) {
-            memScoped {
-                jvm.ptr[0]!!.pointed.pointed!!.DestroyJavaVM!!(jvm.ptr[0])
-            }
+        println("FINALLY")
+        if (jvm.value != null) {
+            println("SHUTDOWN JVM")
+            jvm.ptr[0]!!.pointed.pointed!!.DestroyJavaVM!!(jvm.ptr[0])
             println("JVM DESTROYED")
         }
         println("FINISHED")
     }
+    jvmArena.clear()
 }
 
 private fun CPointer<JNIEnvVar>.newUtfString(string: String): jstring = memScoped {
