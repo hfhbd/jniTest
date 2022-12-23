@@ -68,6 +68,7 @@ fun main(vararg args: String) {
             memScoped {
                 jvm.ptr[0]!!.pointed.pointed!!.DestroyJavaVM!!(jvm.ptr[0])
             }
+            println("JVM DESTROYED")
         }
         println("FINISHED")
     }
