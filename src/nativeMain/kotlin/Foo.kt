@@ -7,7 +7,6 @@ fun main(vararg args: String) {
 
     val classPath = "-Djava.class.path=${args[0]}"
     println(classPath)
-    // val libPath = "-Djava.library.path=${args[1]}"
     val jvm = cValuesOf<JavaVMVar>()
     try {
         memScoped {
@@ -16,7 +15,6 @@ fun main(vararg args: String) {
             vmArgs.nOptions = 1
             val options = allocArray<JavaVMOption>(vmArgs.nOptions)
             options[0].optionString = classPath.cstr.ptr
-            //options[1].optionString = libPath.cstr.ptr
 
             vmArgs.options = options
             val penv = alloc<CPointerVar<JNIEnvVar>>()
@@ -31,21 +29,23 @@ fun main(vararg args: String) {
             println("JVM CREATED")
             val version = requireNotNull(env.pointed.pointed) {
                 "VERSION env.pointed.pointed was null"
-            }.let { requireNotNull(it.GetVersion) {"VERSION it.GetVersion was null "} }(env)
+            }.let { requireNotNull(it.GetVersion) { "VERSION it.GetVersion was null " } }(env)
             println("GOT VERSION $version")
 
             val jcls = env.findClass("sample/MainKt")
             println("GOT MainKt")
             val jclEntry = env.getStaticMethod(jcls, "cobolEntry", "(Lsample/Linking;)V")
-
+            println("GOT jclEntry")
             val optionsClass = env.findClass("sample/Linking")
+            println("GOT optionsClass")
+            val init = env.getMethod(optionsClass, "<init>", "(Ljava/lang/String;I)V")
+            println("GOT init")
             val optionsObject = env.newObject(
                 optionsClass,
-                env.getMethod(optionsClass, "<init>", "(Ljava/lang/String;I)V"),
+                init,
                 {
                     l = env.newUtfString(args[1])
-                },
-                {
+                }, {
                     i = args[2].toInt()
                 }
             )
@@ -73,47 +73,39 @@ fun main(vararg args: String) {
     }
 }
 
-private fun CPointer<JNIEnvVar>.newUtfString(string: String): jstring {
-    return memScoped {
-        pointed.pointed!!.NewStringUTF!!(this@newUtfString, string.cstr.ptr)!!
-    }
+private fun CPointer<JNIEnvVar>.newUtfString(string: String): jstring = memScoped {
+    pointed.pointed!!.NewStringUTF!!(this@newUtfString, string.cstr.ptr)!!
 }
 
 private fun CPointer<JNIEnvVar>.callIntMethod(
     jobject: jobject,
     method: jmethodID,
     vararg values: jvalue.() -> Unit
-): jint {
-    val f = memScoped {
-        allocArray<jvalue>(values.size) {
-            values[it].invoke(this)
-        }
+): jint = memScoped {
+    val args = allocArray<jvalue>(values.size) {
+        values[it].invoke(this)
     }
-    return pointed.pointed!!.CallIntMethodA!!(this@callIntMethod, jobject, method, f)
+    pointed.pointed!!.CallIntMethodA!!(this@callIntMethod, jobject, method, args)
 }
 
 private fun CPointer<JNIEnvVar>.callObjectMethodA(
     jobject: jobject,
     method: jmethodID,
     vararg values: jvalue.() -> Unit
-): jobject {
-    val f = memScoped {
-        allocArray<jvalue>(values.size) {
-            values[it].invoke(this)
-        }
+): jobject = memScoped {
+    val args = allocArray<jvalue>(values.size) {
+        values[it].invoke(this)
     }
-    return pointed.pointed!!.CallObjectMethodA!!(this@callObjectMethodA, jobject, method, f)!!
+    pointed.pointed!!.CallObjectMethodA!!(this@callObjectMethodA, jobject, method, args)!!
 }
 
 private fun CPointer<JNIEnvVar>.callStaticVoidMethod(
     jClass: jclass,
     method: jmethodID,
     vararg values: jvalue.() -> Unit
-) {
-    val args = memScoped {
-        allocArray<jvalue>(values.size) {
-            values[it].invoke(this)
-        }
+): Unit = memScoped {
+    val args = allocArray<jvalue>(values.size) {
+        values[it].invoke(this)
     }
     pointed.pointed!!.CallStaticVoidMethodA!!(this@callStaticVoidMethod, jClass, method, args)
 }
@@ -139,13 +131,11 @@ private fun CPointer<JNIEnvVar>.newObject(
     jClass: jclass,
     method: jmethodID,
     vararg values: jvalue.() -> Unit
-): jobject {
-    val args = memScoped {
-        allocArray<jvalue>(values.size) {
-            values[it].invoke(this)
-        }
+): jobject = memScoped {
+    val args = allocArray<jvalue>(values.size) {
+        values[it].invoke(this)
     }
-    return pointed.pointed!!.NewObjectA!!(this@newObject, jClass, method, args)!!
+    pointed.pointed!!.NewObjectA!!(this@newObject, jClass, method, args)!!
 }
 
 private fun CPointer<JNIEnvVar>.findClass(className: String): jclass = memScoped {
