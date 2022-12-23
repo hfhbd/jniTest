@@ -19,15 +19,15 @@ fun main(vararg args: String) {
             //options[1].optionString = libPath.cstr.ptr
 
             vmArgs.options = options
-            val s = alloc<COpaquePointerVar>().ptr
+            val penv = alloc<CPointerVar<JNIEnvVar>>()
 
             println("CREATE JVM")
-            val resultCreateJvm = JNI_CreateJavaVM(jvm, s, vmArgs.ptr)
+            val resultCreateJvm = JNI_CreateJavaVM(jvm, penv.ptr.reinterpret(), vmArgs.ptr)
             println("CHECK JVM")
             require(resultCreateJvm == JNI_OK) {
                 "JNI_CreateJavaVM failed"
             }
-            val env: CPointer<JNIEnvVar> = s.reinterpret()
+            val env = penv.value!!
             println("JVM CREATED")
             val version = requireNotNull(env.pointed.pointed) {
                 "VERSION env.pointed.pointed was null"
