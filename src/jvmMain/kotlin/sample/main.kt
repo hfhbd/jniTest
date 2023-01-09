@@ -15,7 +15,7 @@ private fun action(linking: Linking) {
     linking.s = linking.s + linking.s
     linking.i = linking.i + linking.i
     println("${linking.s} ${linking.i}")
-    exitProcess(0)
+    exitProcess(4)
 }
 
 fun main(vararg arg: String) {
