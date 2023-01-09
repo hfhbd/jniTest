@@ -3,9 +3,10 @@ import kotlinx.cinterop.*
 
 fun main(vararg args: String) {
     require(args.size == 3) { "Needs classpath + 2 parameters " }
-    requireNotNull(args[2].toIntOrNull())
-
     val classPath = "-Djava.class.path=${args[0]}"
+    val linkingHello = args[1]
+    val linkingNumber = requireNotNull(args[2].toIntOrNull())
+
     println(classPath)
     val jvmArena = Arena()
     val jvm = jvmArena.alloc<CPointerVar<JavaVMVar>>()
@@ -45,9 +46,9 @@ fun main(vararg args: String) {
                 optionsClass,
                 init,
                 {
-                    l = env.newUtfString(args[1])
+                    l = env.newUtfString(linkingHello)
                 }, {
-                    i = args[2].toInt()
+                    i = linkingNumber
                 }
             )
             println("CREATE Main.Linking")

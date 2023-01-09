@@ -34,3 +34,4 @@ jobs:
           path: | 
             "**.log"
             "core.**"
+      - run: ./gradlew runJni

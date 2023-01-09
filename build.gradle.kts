@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.konan.target.*
+
 plugins {
     kotlin("multiplatform") version "1.8.0"
     id("org.jetbrains.kotlinx.binary-compatibility-validator") version "0.12.1"
@@ -31,24 +33,24 @@ kotlin {
         }
     }
 
-    linuxX64 {
-         config("linux")
+    when (HostManager.host) {
+        KonanTarget.LINUX_X64 -> linuxX64("native") { config("linux") }
+        KonanTarget.LINUX_ARM64 -> linuxArm64("native") { config("linux") }
+        KonanTarget.MACOS_X64 -> macosX64("native") { config("darwing", ) }
+        KonanTarget.MACOS_ARM64 -> macosArm64("native") { config("darwin") }
     }
-    macosArm64 { config("darwin") }
-    macosX64 { config("darwin") }
-    
-    sourceSets {
-        val nativeMain by creating
-        val macosArm64Main by getting {
-            dependsOn(nativeMain)
-        }
-        val macosX64Main by getting {
-            dependsOn(nativeMain)
-        }
-        val linuxX64Main by getting {
-            dependsOn(nativeMain)
-        }
+}
+
+
+tasks.register<Exec>("runJni") {
+    dependsOn(tasks.assemble)
+    val javaHome: Provider<String> = providers.environmentVariable("JAVA_HOME")
+    val classPath: Provider<String> = tasks.run.map {
+        it.classpath.joinToString(":")
     }
+
+    environment("LD_LIBRARY_PATH", javaHome.map { "${"$"}LD_LIBRARY_PATH:$it)" }.get())
+    commandLine("./build/bin/native/debugExecutable/jniTest.kexe", classPath.get(), "Hello", 42)
 }
 
 tasks.register("getClassPath") {
