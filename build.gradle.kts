@@ -49,7 +49,7 @@ tasks.register<Exec>("runJni") {
         it.classpath.joinToString(":")
     }
 
-    environment("LD_LIBRARY_PATH", javaHome.map { "${"$"}LD_LIBRARY_PATH:$it)" }.get())
+    environment("LD_LIBRARY_PATH", javaHome.map { "${"$"}LD_LIBRARY_PATH:$it/lib/server" }.get())
     commandLine("./build/bin/native/debugExecutable/jniTest.kexe", classPath.get(), "Hello", 42)
 }
 
