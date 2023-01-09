@@ -27,7 +27,7 @@ jobs:
         run: ./gradlew build
       - run: ./gradlew getClassPath
       - run: echo "CLASSPATH=$(cat class.path)" >> $GITHUB_ENV
-      - run: LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${{ env.JAVA_HOME }}/lib/server ./build/bin/linuxX64/debugExecutable/jniTest.kexe ${{ env.CLASSPATH }} Hello 42
+      - run: LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${{ env.JAVA_HOME }}/lib/server ./build/bin/native/debugExecutable/jniTest.kexe ${{ env.CLASSPATH }} Hello 42
       - uses: actions/upload-artifact@v3
         if: failure()
         with:
