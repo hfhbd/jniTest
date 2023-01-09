@@ -1,7 +1,5 @@
 package sample
 
-import kotlin.system.*
-
 class Linking(
     var s: String,
     var i: Int
@@ -15,7 +13,6 @@ private fun action(linking: Linking) {
     linking.s = linking.s + linking.s
     linking.i = linking.i + linking.i
     println("${linking.s} ${linking.i}")
-    exitProcess(4)
 }
 
 fun main(vararg arg: String) {
