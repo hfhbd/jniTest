@@ -17,7 +17,7 @@ kotlin {
         withJava()
     }
 
-    fun org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget.config() {
+    fun org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget.config(os: String) {
         binaries.executable()
 
         compilations.named("main") {
@@ -27,7 +27,7 @@ kotlin {
                     println(javaHome.resolve("include"))
                     includeDirs(
                         javaHome.resolve("include"),
-                        javaHome.resolve("include/${HostManager.jniHostPlatformIncludeDir}"),
+                        javaHome.resolve("include/$os"),
                     )
                     defFile(project.file("src/nativeInterop/cinterop/jni.def"))
                 }
@@ -36,10 +36,10 @@ kotlin {
     }
 
     when (HostManager.host) {
-        KonanTarget.LINUX_X64 -> linuxX64("native") { config() }
-        KonanTarget.LINUX_ARM64 -> linuxArm64("native") { config() }
-        KonanTarget.MACOS_X64 -> macosX64("native") { config() }
-        KonanTarget.MACOS_ARM64 -> macosArm64("native") { config() }
+        KonanTarget.LINUX_X64 -> linuxX64("native") { config("linux") }
+        KonanTarget.LINUX_ARM64 -> linuxArm64("native") { config("linux") }
+        KonanTarget.MACOS_X64 -> macosX64("native") { config("darwing", ) }
+        KonanTarget.MACOS_ARM64 -> macosArm64("native") { config("darwin") }
         else -> error("Not supported target ${HostManager.host}")
     }
 }
@@ -52,7 +52,9 @@ tasks.register<Exec>("runJni") {
         it.classpath.joinToString(":")
     }
 
-    environment("LD_LIBRARY_PATH", javaHome.map { "${"$"}LD_LIBRARY_PATH:$it/lib/server" }.get())
+    environment("LD_LIBRARY_PATH", javaHome.map { "${"$"}LD_LIBRARY_PATH:$it/lib/server" }.get().also { 
+        println(it)
+    })
     commandLine("./build/bin/native/debugExecutable/jniTest.kexe", classPath.get(), "Hello", 42)
 }
 

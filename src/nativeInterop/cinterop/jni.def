@@ -1,5 +1,2 @@
 headers = jni.h
 package = jni
-
-linkerOpts.osx = -L/Users/philipwedemann/Library/Java/JavaVirtualMachines/azul-17.0.5/Contents/Home/lib/server -ljvm
-linkerOpts.linux = -L/opt/hostedtoolcache/Java_Adopt_jdk/17.0.5-8/x64/lib/server/ -ljvm
