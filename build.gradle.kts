@@ -18,18 +18,13 @@ kotlin {
     }
 
     fun org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget.config(os: String) {
-        binaries.executable()
+        binaries.sharedLib()
 
         compilations.named("main") {
             cinterops {
                 register("jni") {
                     val javaHome = File(System.getProperty("java.home"))
-                    println(javaHome.resolve("include").also { 
-                        println(it.exists())
-                    })
-                    println(javaHome.resolve("include/$os").also { 
-                        println(it.exists())
-                    })
+                    
                     includeDirs(
                         javaHome.resolve("include"),
                         javaHome.resolve("include/$os"),
