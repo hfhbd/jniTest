@@ -24,12 +24,16 @@ kotlin {
             cinterops {
                 register("jni") {
                     val javaHome = File(System.getProperty("java.home"))
-                    println(javaHome.resolve("include"))
+                    println(javaHome.resolve("include").also { 
+                        println(it.exists())
+                    })
+                    println(javaHome.resolve("include/$os").also { 
+                        println(it.exists())
+                    })
                     includeDirs(
                         javaHome.resolve("include"),
                         javaHome.resolve("include/$os"),
                     )
-                    defFile(project.file("src/nativeInterop/cinterop/jni.def"))
                 }
             }
         }
