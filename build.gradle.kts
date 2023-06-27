@@ -1,9 +1,9 @@
 import org.jetbrains.kotlin.konan.target.*
 
 plugins {
-    kotlin("multiplatform") version "1.8.0"
-    id("org.jetbrains.kotlinx.binary-compatibility-validator") version "0.12.1"
-    application
+    kotlin("multiplatform") version "1.8.22"
+    id("org.jetbrains.kotlinx.binary-compatibility-validator") version "0.13.2"
+    id("application")
 }
 
 repositories {
@@ -11,6 +11,8 @@ repositories {
 }
 
 kotlin {
+    jvmToolchain(17)
+
     jvm {
         withJava()
     }
@@ -54,7 +56,7 @@ tasks.register<Exec>("runJni") {
 }
 
 tasks.register("getClassPath") {
-    val classPath = tasks.run.map { 
+    val classPath = tasks.run.map {
         it.classpath.joinToString(":")
     }
     doFirst {
