@@ -17,7 +17,7 @@ kotlin {
         withJava()
     }
 
-    fun org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget.config(os: String) {
+    fun org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget.config() {
         binaries.executable()
 
         compilations.named("main") {
@@ -27,7 +27,7 @@ kotlin {
                     println(javaHome.resolve("include"))
                     includeDirs(
                         javaHome.resolve("include"),
-                        javaHome.resolve("include/$os"),
+                        javaHome.resolve("include/${HostManager.jniHostPlatformIncludeDir}"),
                     )
                     defFile(project.file("src/nativeInterop/cinterop/jni.def"))
                 }
@@ -36,10 +36,11 @@ kotlin {
     }
 
     when (HostManager.host) {
-        KonanTarget.LINUX_X64 -> linuxX64("native") { config("linux") }
-        KonanTarget.LINUX_ARM64 -> linuxArm64("native") { config("linux") }
-        KonanTarget.MACOS_X64 -> macosX64("native") { config("darwing", ) }
-        KonanTarget.MACOS_ARM64 -> macosArm64("native") { config("darwin") }
+        KonanTarget.LINUX_X64 -> linuxX64("native") { config() }
+        KonanTarget.LINUX_ARM64 -> linuxArm64("native") { config() }
+        KonanTarget.MACOS_X64 -> macosX64("native") { config() }
+        KonanTarget.MACOS_ARM64 -> macosArm64("native") { config() }
+        else -> error("Not supported target ${HostManager.host}")
     }
 }
 
