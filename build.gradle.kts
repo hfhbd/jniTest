@@ -60,8 +60,8 @@ val copyToNative by tasks.registering(Copy::class) {
         KonanTarget.MACOS_X64 -> "macosX64"
         KonanTarget.MACOS_ARM64 -> "macosArm64"
         else -> error("Not supported target ${HostManager.host}")
-    }
-    from("build/bin/$target/debugExecutable")
+    }.replaceFirstChar { it.uppercaseChar() }
+    from(tasks.named("linkDebugExecutable$target"))
     into("build/bin/native/debugExecutable")
 }
 
