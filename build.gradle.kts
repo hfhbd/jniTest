@@ -44,7 +44,6 @@ kotlin {
         else -> error("Not supported target ${HostManager.host}")
     }
 
-
     sourceSets {
         commonTest {
             dependencies {
@@ -54,9 +53,21 @@ kotlin {
     }
 }
 
+val copyToNative by tasks.registering(Copy::class) {
+    val target = when (HostManager.host) {
+        KonanTarget.LINUX_X64 -> "linuxX64"
+        KonanTarget.LINUX_ARM64 -> "linuxArm64"
+        KonanTarget.MACOS_X64 -> "macosX64"
+        KonanTarget.MACOS_ARM64 -> "macosArm64"
+        else -> error("Not supported target ${HostManager.host}")
+    }
+    from("build/bin/$target/debugExecutable/jniTest.kexe")
+    to("build/bin/native/debugExecutable/jniTest.kexe")
+}
 
 tasks.register<Exec>("runJni") {
     dependsOn(tasks.assemble)
+    dependsOn(copyToNative)
     val javaHome: Provider<String> = providers.environmentVariable("JAVA_HOME")
     val classPath: Provider<String> = tasks.run.map {
         it.classpath.joinToString(":")

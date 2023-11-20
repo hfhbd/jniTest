@@ -14,7 +14,6 @@ gradleEnterprise {
     }
 }
 
-
 rootProject.name = "jniTest"
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
