@@ -62,7 +62,7 @@ val copyToNative by tasks.registering(Copy::class) {
         else -> error("Not supported target ${HostManager.host}")
     }
     from("build/bin/$target/debugExecutable/jniTest.kexe")
-    to("build/bin/native/debugExecutable/jniTest.kexe")
+    into("build/bin/native/debugExecutable/jniTest.kexe")
 }
 
 tasks.register<Exec>("runJni") {
