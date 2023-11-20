@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -17,6 +19,9 @@ jobs:
           distribution: 'adopt'
           java-version: 17
       - uses: gradle/gradle-build-action@v2
+        with:
+          dependency-graph: generate-and-submit
+          gradle-home-cache-cleanup: true
       - name: Build with Gradle
         run: ./gradlew build
       - run: ./gradlew getClassPath

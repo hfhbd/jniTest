@@ -37,11 +37,20 @@ kotlin {
     }
 
     when (HostManager.host) {
-        KonanTarget.LINUX_X64 -> linuxX64("native") { config("linux") }
-        KonanTarget.LINUX_ARM64 -> linuxArm64("native") { config("linux") }
-        KonanTarget.MACOS_X64 -> macosX64("native") { config("darwing", ) }
-        KonanTarget.MACOS_ARM64 -> macosArm64("native") { config("darwin") }
+        KonanTarget.LINUX_X64 -> linuxX64 { config("linux") }
+        KonanTarget.LINUX_ARM64 -> linuxArm64 { config("linux") }
+        KonanTarget.MACOS_X64 -> macosX64 { config("darwing", ) }
+        KonanTarget.MACOS_ARM64 -> macosArm64 { config("darwin") }
         else -> error("Not supported target ${HostManager.host}")
+    }
+
+
+    sourceSets {
+        commonTest {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
     }
 }
 
