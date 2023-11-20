@@ -61,8 +61,8 @@ val copyToNative by tasks.registering(Copy::class) {
         KonanTarget.MACOS_ARM64 -> "macosArm64"
         else -> error("Not supported target ${HostManager.host}")
     }
-    from("build/bin/$target/debugExecutable/jniTest.kexe")
-    into("build/bin/native/debugExecutable/jniTest.kexe")
+    from("build/bin/$target/debugExecutable")
+    into("build/bin/native/debugExecutable")
 }
 
 tasks.register<Exec>("runJni") {
