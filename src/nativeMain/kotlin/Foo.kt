@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalForeignApi::class)
+
 import jni.*
 import kotlinx.cinterop.*
 

@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.konan.target.*
 
 plugins {
-    kotlin("multiplatform") version "1.8.22"
+    kotlin("multiplatform") version "1.9.20"
     id("org.jetbrains.kotlinx.binary-compatibility-validator") version "0.13.2"
     id("application")
 }
@@ -37,17 +37,37 @@ kotlin {
     }
 
     when (HostManager.host) {
-        KonanTarget.LINUX_X64 -> linuxX64("native") { config("linux") }
-        KonanTarget.LINUX_ARM64 -> linuxArm64("native") { config("linux") }
-        KonanTarget.MACOS_X64 -> macosX64("native") { config("darwing", ) }
-        KonanTarget.MACOS_ARM64 -> macosArm64("native") { config("darwin") }
+        KonanTarget.LINUX_X64 -> linuxX64 { config("linux") }
+        KonanTarget.LINUX_ARM64 -> linuxArm64 { config("linux") }
+        KonanTarget.MACOS_X64 -> macosX64 { config("darwing", ) }
+        KonanTarget.MACOS_ARM64 -> macosArm64 { config("darwin") }
         else -> error("Not supported target ${HostManager.host}")
+    }
+
+    sourceSets {
+        commonTest {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
     }
 }
 
+val copyToNative by tasks.registering(Copy::class) {
+    val target = when (HostManager.host) {
+        KonanTarget.LINUX_X64 -> "linuxX64"
+        KonanTarget.LINUX_ARM64 -> "linuxArm64"
+        KonanTarget.MACOS_X64 -> "macosX64"
+        KonanTarget.MACOS_ARM64 -> "macosArm64"
+        else -> error("Not supported target ${HostManager.host}")
+    }.replaceFirstChar { it.uppercaseChar() }
+    from(tasks.named("linkDebugExecutable$target"))
+    into("build/bin/native/debugExecutable")
+}
 
 tasks.register<Exec>("runJni") {
     dependsOn(tasks.assemble)
+    dependsOn(copyToNative)
     val javaHome: Provider<String> = providers.environmentVariable("JAVA_HOME")
     val classPath: Provider<String> = tasks.run.map {
         it.classpath.joinToString(":")

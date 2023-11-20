@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -17,8 +19,12 @@ jobs:
           distribution: 'adopt'
           java-version: 17
       - uses: gradle/gradle-build-action@v2
+        with:
+          dependency-graph: generate-and-submit
+          gradle-home-cache-cleanup: true
       - name: Build with Gradle
         run: ./gradlew build
+      - run: ./gradlew copyToNative
       - run: ./gradlew getClassPath
       - run: echo "CLASSPATH=$(cat class.path)" >> $GITHUB_ENV
       - run: LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${{ env.JAVA_HOME }}/lib/server ./build/bin/native/debugExecutable/jniTest.kexe ${{ env.CLASSPATH }} Hello 42
