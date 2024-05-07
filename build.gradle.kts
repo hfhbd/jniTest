@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.konan.target.*
 
 plugins {
-    kotlin("multiplatform") version "1.9.23"
+    kotlin("multiplatform") version "1.9.24"
     id("org.jetbrains.kotlinx.binary-compatibility-validator") version "0.14.0"
     id("application")
 }
