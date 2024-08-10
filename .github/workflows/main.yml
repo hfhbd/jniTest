@@ -18,10 +18,9 @@ jobs:
         with:
           distribution: 'adopt'
           java-version: 17
-      - uses: gradle/actions/setup-gradle@v3
+      - uses: gradle/actions/setup-gradle@v4
         with:
           dependency-graph: generate-and-submit
-          gradle-home-cache-cleanup: true
       - name: Build with Gradle
         run: ./gradlew build
       - run: ./gradlew copyToNative
