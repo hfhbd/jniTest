@@ -1,6 +1,6 @@
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "0.9.0"
-    id("com.gradle.enterprise") version "3.17"
+    id("com.gradle.enterprise") version "3.18.2"
 }
 
 gradleEnterprise {
