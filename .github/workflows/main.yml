@@ -18,7 +18,7 @@ jobs:
         with:
           distribution: 'adopt'
           java-version: 17
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
         with:
           dependency-graph: generate-and-submit
       - name: Build with Gradle
